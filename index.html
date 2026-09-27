@@ -1,0 +1,51 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Kalkulator Dachu">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Kalkulator Dachu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:720px;margin:auto;padding:18px 0 30px}h1{font-size:28px;margin:4px}.sub{color:#6b7280;margin:0 4px 18px}.card{background:white;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 2px 12px #00000012}
+.field{margin-bottom:14px}label{display:block;font-weight:650;margin-bottom:7px}input{width:100%;font-size:19px;padding:14px;border:1px solid #d1d5db;border-radius:13px}
+button{width:100%;min-height:52px;border:0;border-radius:14px;background:#111827;color:white;font-size:18px;font-weight:700}.results{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.result{background:#f9fafb;border-radius:14px;padding:13px}.k{font-size:13px;color:#6b7280;margin-bottom:5px}.v{font-size:20px;font-weight:750}
+.note{font-size:14px;color:#6b7280;line-height:1.4}.error{display:none;color:#991b1b;background:#fef2f2;border-radius:12px;padding:11px;margin-top:12px}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:360px}th,td{padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right}th:first-child,td:first-child{text-align:left}th{font-size:13px;color:#6b7280}
+.footer{text-align:center;color:#9ca3af;font-size:12px;margin-top:18px}
+</style></head><body><main>
+<h1>🏠 Kalkulator Dachu</h1><p class="sub">Wersja zoptymalizowana pod iPhone / Safari</p>
+<section class="card">
+<div class="field"><label>Wysokość ściany [cm]</label><input id="wall" type="number" inputmode="decimal" step="0.1" placeholder="np. 214"></div>
+<div class="field"><label>Wysokość szczytu [cm]</label><input id="peak" type="number" inputmode="decimal" step="0.1" placeholder="np. 330"></div>
+<div class="field"><label>Szerokość garażu [cm]</label><input id="width" type="number" inputmode="decimal" step="0.1" placeholder="np. 1200"></div>
+<div class="field"><label>Długość garażu [cm]</label><input id="length" type="number" inputmode="decimal" step="0.1" placeholder="np. 700"></div>
+<div class="field"><label>Podział wysokości [cm]</label><input id="step" type="number" inputmode="decimal" step="1" value="50"></div>
+<button id="calc" type="button" onclick="calculate()">OBLICZ</button><div id="error" class="error"></div></section>
+<section id="output" style="display:none"><div class="card"><h2>Wyniki</h2><div class="results">
+<div class="result"><div class="k">tan(a)</div><div class="v" id="tan"></div></div>
+<div class="result"><div class="k">Kąt dachu</div><div class="v" id="angle"></div></div>
+<div class="result"><div class="k">Długość krokwi</div><div class="v" id="rafter"></div></div>
+<div class="result"><div class="k">Blacha pod rynnę</div><div class="v" id="under"></div></div>
+<div class="result"><div class="k">Blacha bez rynien</div><div class="v" id="nogutter"></div></div>
+<div class="result"><div class="k">Powierzchnia dachu</div><div class="v" id="area"></div></div>
+<div class="result"><div class="k">Arkusze na cały dach</div><div class="v" id="sheets"></div></div>
+</div><p id="sheetNote" class="note"></p></div>
+<div class="card"><h2>Wysokości na szerokości garażu</h2><div class="table-wrap"><table><thead><tr><th>Od lewej [cm]</th><th>Wysokość [cm]</th></tr></thead><tbody id="heightTable"></tbody></table></div></div></section>
+<div class="footer">Kalkulator działa offline po instalacji jako PWA.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id), num=id=>Number($(id).value.replace(",",".")), fmt=(v,d=2)=>Number(v).toLocaleString("pl-PL",{minimumFractionDigits:d,maximumFractionDigits:d});
+function calculate(){
+ const wall=num("wall"),peak=num("peak"),width=num("width"),length=num("length"),step=num("step"),err=$("error");
+ err.style.display="none";
+ if(![wall,peak,width,length,step].every(Number.isFinite)||width<=0||length<=0||step<=0||peak<=wall){err.textContent="Sprawdź dane. Szczyt musi być wyżej od ściany, a pozostałe wartości > 0.";err.style.display="block";$("output").style.display="none";return}
+ const half=width/2,rise=peak-wall,tan=rise/half,angle=Math.atan(tan)*180/Math.PI,rafter=Math.hypot(half,rise),area=2*rafter*length/10000;
+ const lm=length/100,full=Math.floor(lm),rem=lm-full,sheets=rem>1e-9?full*2+1:full*2;
+ $("tan").textContent=fmt(tan,4);$("angle").textContent=fmt(angle,2)+"°";$("rafter").textContent=fmt(rafter,1)+" cm";$("under").textContent=fmt(rafter+6,1)+" cm";$("nogutter").textContent=fmt(rafter+16,1)+" cm";$("area").textContent=fmt(area,2)+" m²";$("sheets").textContent=sheets;
+ $("sheetNote").textContent=rem>1e-9?`Długość ${fmt(lm,2)} m: niepełny metr — dodano 1 arkusz do całego dachu.`:`Długość ${fmt(lm,2)} m jest pełnym metrem.`;
+ let rows="",x=0;while(x<width-1e-9){let h=x<=half?wall+rise*x/half:peak-rise*(x-half)/half;rows+=`<tr><td>${fmt(x,1)}</td><td>${fmt(h,1)}</td></tr>`;x=Math.min(width,x+step)}rows+=`<tr><td>${fmt(width,1)}</td><td>${fmt(peak,1)}</td></tr>`;$("heightTable").innerHTML=rows;$("output").style.display="block";
+}
+document.querySelectorAll("input").forEach(i=>i.onkeydown=e=>{if(e.key==="Enter")calculate()});
+if("serviceWorker"in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script></body></html>
